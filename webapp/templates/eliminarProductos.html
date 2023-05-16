@@ -1,0 +1,22 @@
+<!doctype html>
+    <html>
+        <head>
+            <meta charset="UFT-8">
+            <meta content="width=device-width, initial scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+            <link rel="stylesheet" href="((url_for('2static', 'filename=css/estilo.css') ))">
+            <title> Eliminar productos </title>
+        </head>
+        <body>
+            <h2>Eliminar productos</h2>
+            <br>
+            <form method="POST" action="/eliminarProducto">
+                <label for="producto">Selecciona el producto a eliminar: </label>
+                <select id="producto" name="producto">
+                    {% for producto in productos %}
+                        <option value="{{ producto[0] }}"> {{ producto[1] }} </option> 
+                    {% endfor %}
+                </select>
+                <input type="submit" value="Eliminar">
+            </form>
+        </body>
+    </html>

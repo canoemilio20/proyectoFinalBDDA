@@ -1,0 +1,29 @@
+<!doctype html>
+    <html>
+        <head>
+            <meta charset="UFT-8">
+            <meta content="width=device-width, initial scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+            <link rel="stylesheet" href="((url_for('2static', 'filename=css/estilo.css') ))">
+            <title> Modificar productos </title>
+        </head>
+        <body>
+            <!-- Inicio de Formulario de Actualizacion -->
+            <h2>Modificar productos</h2>
+            <br>
+            <form method="POST" action="/modificarProducto">
+                <label for="producto">Selecciona el producto a modificar: </label>
+                <select id="producto" name="producto">
+                    {% for producto in productos %}
+                        <option value="{{ producto[0] }}"> {{ producto[1] }} </option> 
+                    {% endfor %}
+                </select>
+                <br>
+                <label for="nombre">Nombre:</label>
+                <input type="text" name="nombre" value="{% if producto is defined %} {{ producto[1] }} {% endif %}">
+                <br>
+                <label for="cantidad">Cantidad:</label>
+                <input type="text" name="cantidad" value="{% if producto is defined %} {{ producto[2] }} {% endif %}">
+                <input type="submit" value="Modificar">
+            </form>
+        </body>
+    </html>

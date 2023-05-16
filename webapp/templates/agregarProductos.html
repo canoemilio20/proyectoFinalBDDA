@@ -1,0 +1,26 @@
+<!doctype html>
+    <html>
+        <head>
+            <!-- Etiquetas meta y uso de Jinja -->
+            <meta charset="UFT-8">
+            <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+            <link rel="stylesheet" href="{{url_for('static', filename='css/estilo.css')}}">
+            <title> Agregar productos </title>
+        </head>
+        <body>
+            <!-- Iniciamos -->
+            <h2>Agregar productos</h2>
+            <br>
+            <form method="POST" action="/agregarProducto">
+                <p>Nombre: 
+                    <input type="text" name="nombre"/>
+                    <br>
+                    Cantidad:
+                    <input type="text" name="cantidad"/>
+                    <br>
+                    <input type="submit" value="Agregar"/>
+                </p>
+            </form>
+            <!-- Terminamos -->
+        </body>
+    </html>

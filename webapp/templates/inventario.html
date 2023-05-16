@@ -1,0 +1,35 @@
+<!doctype html>
+    <html>
+        <head>
+            <!-- Etiquetas meta y uso de Jinja -->
+            <meta charset="UFT-8">
+            <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+            <link rel="stylesheet" href="{{url_for('static', filename='css/estilo.css')}}">
+            <title> Inventario </title>
+        </head>
+        <body>
+            <!-- Iniciamos JINJA-->
+            <h1> Bienvenido, {{ current_user.NombreU.ApellidoPU}}
+            <h1>Consulta de inventario</h1>
+            <br>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Cantidad</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {%for producto in productos%}
+                    <tr>
+                        <td>{{ producto[1] }}</td>
+                        <td>{{ producto[2] }}</td>
+                    </tr>
+                    {%endfor%}
+                </tbody>
+            </table>
+            <a class="btn btn-secundary" href="{{ url_for('logout') }}">logout</a>
+            <!-- Terminamos -->
+        </body>
+    </html>
