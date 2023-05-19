@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Modificar Usuario</title>
+</head>
+<body>
+    <h1>Modificar Usuario</h1>
+    
+    <form method="POST" action="{{ url_for('modificar_usuario', idUsuario=usuario[0]) }}">
+        <label for="usuario">Usuario:</label>
+        <input type="text" id="usuario" name="usuario" value="{{ usuario[1] }}" required>
+        
+        <label for="idTipo">ID Tipo:</label>
+        <input type="text" id="idTipo" name="idTipo" value="{{ usuario[2] }}" required>
+        
+        <button type="submit">Guardar</button>
+    </form>
+    
+    <a href="{{ url_for('usuarios') }}">Cancelar</a>
+</body>
+</html>

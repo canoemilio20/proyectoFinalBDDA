@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Usuarios</title>
+</head>
+<body>
+    <h1>Lista de Usuarios</h1>
+    
+    {% if usuarios %}
+        <table>
+            <tr>
+                <th>ID Usuario</th>
+                <th>Correo</th>
+                <th>Nombre</th>
+                <th>Apellido Paterno</th>
+                <th>Apellido Materno</th>
+                <th>Correo</th>
+                <th>ID Tipo</th>
+                <th>Acciones</th>
+            </tr>
+            {% for usuario in usuarios %}
+            <tr>
+                <td>{{ usuario[0] }}</td>
+                <td>{{ usuario[1] }}</td>
+                <td>{{ usuario[2] }}</td>
+                <td>
+                    <a href="{{ url_for('modificar_usuario', idUsuario=usuario[0]) }}">Modificar</a>
+                    <a href="{{ url_for('eliminar_usuario', idUsuario=usuario[0]) }}">Eliminar</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No hay usuarios registrados.</p>
+    {% endif %}
+    
+    <a href="{{ url_for('inicio') }}">Volver</a>
+</body>
+</html>

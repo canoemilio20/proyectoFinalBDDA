@@ -6,7 +6,7 @@ class DevelopmentConfig(Config):
     MYSQL_HOST = 'localhost'
     MYSQL_USER = 'usuario'
     MYSQL_PASSWORD = '111'
-    MYSQL_DB = 'proyecto'
+    MYSQL_DB = 'elatico'
 
 
 config={
