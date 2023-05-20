@@ -10,7 +10,6 @@
         <table>
             <tr>
                 <th>ID Usuario</th>
-                <th>Correo</th>
                 <th>Nombre</th>
                 <th>Apellido Paterno</th>
                 <th>Apellido Materno</th>
@@ -20,12 +19,15 @@
             </tr>
             {% for usuario in usuarios %}
             <tr>
-                <td>{{ usuario[0] }}</td>
-                <td>{{ usuario[1] }}</td>
-                <td>{{ usuario[2] }}</td>
+                <td>{{ usuario.idUsuario }}</td>
+                <td>{{ usuario.nombre }}</td>
+                <td>{{ usuario.apellidoPaterno }}</td>
+                <td>{{ usuario.apellidoMaterno }}</td>
+                <td>{{ usuario.nomrbeUsuario }}</td>
+                <td>{{ usuario.idTipo }}</td>
                 <td>
-                    <a href="{{ url_for('modificar_usuario', idUsuario=usuario[0]) }}">Modificar</a>
-                    <a href="{{ url_for('eliminar_usuario', idUsuario=usuario[0]) }}">Eliminar</a>
+                    <a href="{{ url_for('modificarUsuarios', idUsuario=usuario.idUsuario) }}">Modificar</a>
+                    <a href="{{ url_for('modificarUsuarios', idUsuario=usuario.idUsuario) }}">Eliminar</a>
                 </td>
             </tr>
             {% endfor %}

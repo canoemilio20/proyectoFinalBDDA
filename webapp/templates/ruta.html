@@ -1,3 +1,9 @@
+{% extends 'layoutAlmacen.html' %}
+
+{% block body %}
+
+<!--CONTENIDO PRINCIPAL DE LA PAGINA-->
+
 <!DOCTYPE html>
 <html>
   <head>
@@ -6,14 +12,16 @@
     <title>Trazar ruta</title>
     <style>
       #map {
-        height: 770px;
+        height: 670px;
         width: 100%;
       }
     </style>
   </head>
   <body>
-    <h4>Ruta</h4><button onclick="location.href='rastreo.html'" type="button">monitorear</button>>
-
+    <h4>Ruta &Oacute;ptima</h4>
+    <nav>
+      <a href="/rastreoAlmacen">Rastrear Pedido</a>
+    </nav>
     <div id="map"></div>
     <script>
       let estoa = { lat: 25.66372048660872, lng: -100.42183451724908 }
@@ -105,3 +113,5 @@
     </script>
   </body>
 </html>
+
+{% endblock %}

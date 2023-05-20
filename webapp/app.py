@@ -1,230 +1,183 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, session, redirect, url_for
 from flask_mysqldb import MySQL
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
+from mysql import connector
 from werkzeug.security import check_password_hash
-
-from config import config
 
 app = Flask(__name__)
 mysql = MySQL(app)
-login_manager_app = LoginManager(app)
+app.secret_key='HOLA'
 
-class Usuario(UserMixin):
-    def __init__(self, idUsuario, correo, contrasena, idTipo,):
-        self.idUsuario = idUsuario
-        self.correo = correo 
-        self.contrasena = contrasena
-        self.idTipo = idTipo
-        
-    @classmethod
-    def check_password(self, hashed_password, contrasena):
-        return check_password_hash(hashed_password, contrasena)
-    
-class Administrador(Usuario):
-    def __init__(self, idUsuario, correo, contrasena, idTipo):
-        super().__init__(idUsuario, correo, contrasena, idTipo)
-    
-class Compania(Usuario):
-    def __init__(self, idUsuario, correo, contrasena, idTipo):
-        super().__init__(idUsuario, correo, contrasena, idTipo)
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'usuario'
+app.config['MYSQL_PASSWORD'] = '111'
+app.config['MYSQL_DB'] = 'elatico'
 
-class Empleado(Usuario):
-    def __init__(self, idUsuario, correo, contrasena, idTipo):
-        super().__init__(idUsuario, correo, contrasena, idTipo)
-
-
-################## LOGIN ##########################################
-
-@login_manager_app.user_loader
-def load_user(idUsuario):
-    cursor = mysql.connection.cursor()
-    cursor.execute('SELECT idUsuario, correo, contrasena, idTipo FROM Usuarios WHERE idUsuario = %s', (idUsuario))
-    row = cursor.fetchone()
-    if row is not None:
-        idUsuario, correo, contrasena, idTipo = row
-        if idTipo == 1:
-            return Administrador(idUsuario, correo, contrasena, idTipo)
-        elif idTipo == 2:
-            return Compania(idUsuario, correo, contrasena, idTipo)
-        elif idTipo == 3:
-            return Empleado(idUsuario, correo, contrasena, idTipo)
-    return None
-
-
+################## SISTEMA LOGIN ##########################################
 @app.route('/')
 def index():
-    return redirect(url_for('login'))
-
+    if 'nombreUsuario' in session:
+        nombreUsuario = session['nombreUsuario']
+        idTipo = session.get('idTipo')
+        
+        if idTipo == 1:
+            return render_template('admin.html', nombreUsuario=nombreUsuario)
+        elif idTipo == 2:
+            return render_template('inventario.html', nombreUsuario=nombreUsuario)
+        elif idTipo == 3:
+            return render_template('index.html', nombreUsuario=nombreUsuario)
+        else:
+            error = 'Tipo de usuario no válido.'
+            return render_template('login.html', error=error)
+    else:
+        return redirect('/login')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        correo = request.form['correo']
-        contrasena = request.form['contrasena']
-        cursor = mysql.connection.cursor()
-        cursor.execute('''SELECT idUsuario, correo, contrasena, idTipo FROM Usuarios WHERE correo AND contrasena = %s, %s''', (correo, contrasena))
-        row = cursor.fetchone()
-        if row is not None:
-            idUsuario, correo, db_contrasena, idTipo = row
-            if contrasena == db_contrasena:
-                if idTipo == 1:
-                    user = Administrador(idUsuario, correo, db_contrasena, idTipo)
-                elif idTipo == 2:
-                    user = Compania(idUsuario, correo, db_contrasena, idTipo)
-                elif idTipo == 3:
-                    user = Empleado(idUsuario, correo, db_contrasena, idTipo)
-                login_user(user)
-                return redirect(url_for('protected'))
-            else:
-                flash('Contraseña incorrecta')
-        else:
-            flash('Usuario no encontrado')
-    return render_template('login.html')
+        # Obtener las credenciales ingresadas por el usuario
+        nombreUsuario = request.form['nombreUsuario']
+        contrasenaUsuario = request.form['contrasenaUsuario']
 
+        # Verificar las credenciales en la base de datos
+        conn = connector.connect(
+            host='localhost',
+            user='usuario',
+            password='111',
+            database='elatico'
+        )
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM usuario WHERE nombreUsuario = %s AND contrasenaUsuario = %s", (nombreUsuario, contrasenaUsuario))
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if user:
+            session['nombreUsuario'] = user[1]  # Utilizamos el índice 1 para acceder al nombre de usuario en la tupla
+            session['idTipo'] = user[6]
+            nombreUsuario = session['nombreUsuario']
+            idTipo = session['idTipo']
+
+            if idTipo == 1:
+                return redirect('/admin')
+            elif idTipo == 2:
+                return redirect('/inventarioAlmacen')
+            elif idTipo == 3:
+                return redirect('/index')
+            else:
+                error = 'Tipo de usuario no válido.'
+                return render_template('login.html', error=error)
+        
+        else:
+            error = 'Credenciales inválidas. Intente nuevamente.'
+            return render_template('login.html', error=error)
+    else:
+        # Si es una solicitud GET, mostrar el formulario de inicio de sesión
+        return render_template('login.html')
 
 @app.route('/logout')
-@login_required
 def logout():
-    logout_user()
-    return redirect(url_for('login'))
+    # Cerrar la sesión del usuario y redirigirlo al formulario de inicio de sesión
+    session.pop('nombreUsuario', None)
+    session.pop('idTipo', None)
+    return redirect('/login')
 
-
-@app.route('/protected')
-@login_required
-def protected():
-    return '<h1>Vista protegida</h1>'
-
-
-def status_401(error):
-    return redirect(url_for('login'))
-
-
-def status_404(error):
-    return "<h1>Página no encontrada</h1>"
-
-################# REGISTRO ################################
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
         nombre = request.form['nombre']
-        apellidoP = request.form['apellidoP']
-        apellidoM = request.form['apellidoM']
-        correo = request.form['correo']
-        telefono = request.form['telefono']
-        contrasena = request.form['contrasena']
+        apellidoPaterno = request.form['apellidoPaterno']
+        apellidoMaterno = request.form['apellidoMaterno']
+        nombreUsuario = request.form['nombreUsuario']
+        contrasenaUsuario = request.form['contrasenaUsuario']
+        idTipo = request.form['idTipo']
         
-        # Insertar los datos en la base de datos
-        cursor = mysql.connection.cursor()
-        cursor.execute('''INSERT INTO Usuarios (nombre, apellidoP, apellidoM, correo, telefono, contrasena) VALUES (%s, %s, %s, %s, %s, %s)''', (nombre, apellidoP, apellidoM, correo, telefono, contrasena))
-        mysql.connection.commit()
-        cursor.close()
-        
-        flash('Registro exitoso. Por favor inicia sesión.')
-        return render_template('login')
-    
-    return render_template('registro.html')
+        conn = mysql.connector.connect(host='localhost', user='usuario', password='contraseña', database='basededatos')
+        cursor = conn.cursor()
+        cursor.execute('''INSERT INTO usuario(nombre, apellidoPaterno, apellidoMaterno, nombreUsuario, contrasenaUsuario, idTipo) VALUES(%s, %s, %s, %s, %s, %s)''', (nombre, apellidoPaterno, apellidoMaterno, nombreUsuario, contrasenaUsuario, idTipo))
 
-################## ADMIN ############################
-@app.route('/admin', methods=['GET','POST'])
-@login_required
+################## ADMIN ########################################
+@app.route('/admin')
 def admin():
-    if isinstance(load_user, Administrador):
-        if request.method == 'GET':
-            return flash('No tienes acceso a este dashboard')
-        if request.method == 'POST':
-            return render_template('admin.html')
-
-@app.route('/admin/usuarios', methods=['GET'])
-@login_required
-def usuarios():
-    if isinstance(login_user, Administrador):
+    if 'idTipo' in session and session['idTipo'] == 1:
         cursor = mysql.connection.cursor()
-        cursor.execute('''SELECT idUsuario, nombre, apellidoP, apellidoM, correo, telefono, idTipo FROM Usuarios''')
-        correo = cursor.fetchall()
+        cursor.execute("SELECT idUsuario, nombreUsuario, nombre, apellidoPaterno, apellidoMaterno, idTipo FROM usuario")
+        usuarios = cursor.fetchall()
         cursor.close()
-        return render_template('usuarios.html', correo = correo)
-    else:
-        return "Acceso denegado"
 
-@app.route('admin/usuarios/modificar/<int:idUsuario>', methods=['GET', 'POST'])
-@login_required
+        return render_template('admin.html', usuarios=usuarios)
+
+@app.route('/usuarios/<int:idUsuario>/modificar', methods=['GET', 'POST'])
 def modificar_usuario(idUsuario):
-    if isinstance(login_user, Administrador):
-        if request.method == 'GET':
-            cursor = mysql.connection.cursor()
-            cursor.execute('SELECT idUsuario, correo, idTipo FROM Usuarios WHERE idUsuario = %s', (idUsuario,))
-            correo = cursor.fetchone()
-            cursor.close()
-            if usuario:
-                return render_template('modificarUsuario.html', correo=correo)
-            else:
-                return "Usuario no encontrado"
-        
+    if 'idTipo' in session and session['idTipo'] == 1:
         if request.method == 'POST':
-            usuario = request.form['usuario']
+            # Obtener los datos modificados del formulario
+            nombre = request.form['nombre']
+            apellidoPaterno = request.form['apellidoPaterno']
+            apellidoMaterno = request.form['apellidoMaterno']
             idTipo = request.form['idTipo']
             
             cursor = mysql.connection.cursor()
-            cursor.execute('UPDATE Usuarios SET usuario = %s, idTipo = %s WHERE idUsuario = %s', (usuario, idTipo, idUsuario))
+            cursor.execute("UPDATE usuarios SET nombre = %s, apellidoPaterno = %s, apellidoMaterno = %s, idTipo = %s WHERE idUsuario = %s",(nombre, apellidoPaterno, apellidoMaterno, idTipo, idUsuario))
             mysql.connection.commit()
             cursor.close()
-            
-            flash('Usuario modificado correctamente.')
+
             return redirect(url_for('usuarios'))
-    else:
-        return "Acceso denegado"
+        else:
+            cursor = mysql.connection.cursor()
+            cursor.execute("SELECT * FROM usuario WHERE idUsuario = %s", (idUsuario,))
+            usuario = cursor.fetchone()
+            cursor.close()
 
-
-@app.route('admin/usuarios/eliminar/<int:idUsuario>', methods=['GET'])
-@login_required
-def eliminar_usuario(idUsuario):
-    if isinstance(login_user, Administrador):
-        cursor = mysql.connection.cursor()
-        cursor.execute('DELETE FROM Usuarios WHERE idUsuario = %s', (idUsuario,))
-        mysql.connection.commit()
-        cursor.close()
+            return render_template('modificarUsuarios.html', usuario=usuario)
         
-        flash('Usuario eliminado correctamente.')
-        return redirect(url_for('usuarios'))
-    else:
-        return "Acceso denegado"     
+@app.route('/usuarios/<int:idUsuario>/borrar', methods=['POST'])
+def borrar_usuario(idUsuario):
+    
+    cursor = mysql.connection.cursor()
+    cursor.execute("DELETE FROM usuario WHERE idUsuario = %s", (idUsuario,))
+    mysql.connection.commit()
+    cursor.close()
 
+    return redirect(url_for('usuarios'))
+        
 
-################## EMPLEADOS ##########################################
-# Pagina principal de empleado
-@app.route('/inventario', methods=['GET','POST'])
-@login_required
+################## ALMACEN (nosotros) ##########################################
+# Pagina principal del almacen
+@app.route('/inventarioAlmacen', methods=['GET'])
 def inicio():
-    if isinstance(load_user, Empleado):
-        cursor = mysql.connection.cursor()
-        cursor.execute('''SELECT * FROM producto''')
-        productos = cursor.fetchall()
-        return render_template('inventario.html', productos=productos)
+    if 'idTipo' in session and session['idTipo'] == 2:
+        if request.method == 'GET':
+            cursor = mysql.connection.cursor()
+            cursor.execute('''SELECT * FROM productos''') # corregir consulta
+            productos = cursor.fetchall()
+            return render_template('inventario.html', productos=productos)
+    else:
+        return 'Acceso no autorizado'
 
-# Metodo para agregar productos
+# Metodo para agregar productos en el inventario del almacen
 @app.route('/agregarProducto', methods=['GET','POST'])
-@login_required
 def insertar():
-    if isinstance(load_user, Empleado):
+    if 'idTipo' in session and session['idTipo'] == 2:
         if request.method == 'GET':
             return render_template('agregarProductos.html')
         if request.method == 'POST':
             nombre = request.form['nombre']
             cantidad = request.form['cantidad']
             cursor = mysql.connection.cursor()
-            cursor.execute('''INSERT INTO producto(nombre, cantidad) VALUES(%s, %s)''', (nombre, cantidad))
+            cursor.execute('''INSERT INTO productos(nombre, cantidad) VALUES(%s, %s)''', (nombre, cantidad))
             cursor.connection.commit()
             cursor.close()
             return inicio()
+    else:
+        return 'Acceso no autorizado'
     
 # Metodo para modificar productos. Funciona pero no muestra los valores actuales antes de que se modifiquen
 @app.route('/modificarProducto', methods=['GET','POST'])
-@login_required
 def modificar():
-    if isinstance(load_user, Empleado):
+    if 'idTipo' in session and session['idTipo'] == 2:
         if request.method == 'GET':
             cursor = mysql.connection.cursor()
-            cursor.execute('''SELECT * FROM producto''')
+            cursor.execute('''SELECT * FROM productos''')
             productos = cursor.fetchall()
             return render_template('modificarProductos.html', productos=productos)
         if request.method == 'POST':
@@ -232,44 +185,86 @@ def modificar():
             nombre = request.form['nombre']
             cantidad = request.form['cantidad']
             cursor = mysql.connection.cursor()
-            cursor.execute('''UPDATE producto SET nombre=%s, cantidad=%s WHERE idProducto=%s''', (nombre, cantidad, idProducto))
+            cursor.execute('''UPDATE productos SET nombre=%s, cantidad=%s WHERE idProducto=%s''', (nombre, cantidad, idProducto))
             cursor.connection.commit()
             cursor.close()
             return inicio()
+    else:
+        return 'Acceso no autorizado'
 
 # Metodo para eliminar productos
 @app.route('/eliminarProducto', methods=['GET','POST'])
-@login_required
 def eliminar():
-    if isinstance(load_user, Empleado):
+    if 'idTipo' in session and session['idTipo'] == 2:
         if request.method == 'GET':
             cursor = mysql.connection.cursor()
-            cursor.execute('''SELECT * FROM producto''')
+            cursor.execute('''SELECT * FROM productos''')
             productos = cursor.fetchall()
             return render_template('eliminarProductos.html', productos=productos)
         if request.method == 'POST':
             idProducto = request.form['producto']
             cursor = mysql.connection.cursor()
-            cursor.execute('''DELETE FROM producto WHERE idProducto=%s''', (idProducto,))
+            cursor.execute('''DELETE FROM productos WHERE idProducto=%s''', (idProducto,))
             cursor.connection.commit()
             cursor.close()
             return inicio()
+    else:
+        return 'Acceso no autorizado'
     
 # Metodo para consultar ruta y rastreo de paquete
-@app.route('/ruta', methods=['GET','POST'])
-@login_required
+@app.route('/rutaAlmacen', methods=['GET','POST'])
 def ruta():
-    if isinstance(load_user, Compania):
+    if 'idTipo' in session and session['idTipo'] == 2:
+        if request.method == 'GET': # consultar posicion
+            cursor = mysql.connection.cursor()
+            cursor.execute('''SELECT * FROM productos''')
+            return render_template('ruta.html')
+        if request.method == 'POST': # mostrar ruta con posicion de consulta
+            return
+    else:
+        return 'Acceso no autorizado'
+        
+@app.route('/rastreoAlmacen', methods=['GET'])
+def rastreo():
+    if 'idTipo' in session and session['idTipo'] == 2:
+        if request.method == 'GET': # consultar posicion
+            cursor = mysql.connection.cursor()
+            cursor.execute('''SELECT * FROM productos''')
+            return render_template('rastreo.html')
+        if request.method == 'POST': # mostrar rastreo con posicion de consulta
+            return
+    else:
+        return 'Acceso no autorizado'
+          
+########################################################################################
+
+################## TIENDA ##########################################
+"""
+# Pagina principal de la tienda
+@app.route('/inventarioTienda', methods=['GET','POST'])
+def inicio():
+    if 'idTipo' in session and session['idTipo'] == 3:
+        cursor = mysql.connection.cursor()
+        cursor.execute('''SELECT * FROM productos''') # corregir consulta
+        productos = cursor.fetchall()
+        return render_template('inventario.html', productos=productos)
+    else :
+        return 'Acceso no autorizado'
+
+# Metodo para consultar ruta y rastreo de paquete
+@app.route('/rutaTienda', methods=['GET','POST'])
+def ruta():
+    if 'idTipo' in session and session['idTipo'] == 3:
         if request.method == 'GET':
             cursor = mysql.connection.cursor()
-            cursor.execute('''SELECT * FROM producto''')
+            cursor.execute('''SELECT * FROM productos''')
             return render_template('ruta.html')
         if request.method == 'POST':
-            return
-    
+            return 
+    else :
+        return 'Acceso no autoriza"""
+        
+########################################################################################
     
 if __name__ == "__main__":
-    app.config.from_object(config['development'])
-    app.register_error_handler(401, status_401)
-    app.register_error_handler(404, status_404)
     app.run(debug=True)

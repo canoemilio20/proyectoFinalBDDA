@@ -1,3 +1,9 @@
+{% extends 'layoutAlmacen.html' %}
+
+{% block body %}
+
+<!--CONTENIDO PRINCIPAL DE LA PAGINA-->
+
 <!doctype html>
     <html>
         <head>
@@ -6,30 +12,39 @@
             <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
             <link rel="stylesheet" href="{{url_for('static', filename='css/estilo.css')}}">
             <title> Inventario </title>
+            <style>
+                table.center {
+                    margin: auto;
+                    font-size: 40px;
+                    border-spacing: 100px;
+                }
+
+                th, td {
+                    padding: 20px;
+                }
+            </style>
         </head>
         <body>
-            <!-- Iniciamos JINJA-->
-            <h1> Bienvenido, {{ current_user.NombreU.ApellidoPU}}
+            <h1 id="h"> Bienvenido, Usuario
             <h1>Consulta de inventario</h1>
             <br>
-            <table>
+            <table class="center">
                 <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Cantidad</th>
-                    </tr>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Cantidad</th>
+                  </tr>
                 </thead>
-
                 <tbody>
-                    {%for producto in productos%}
-                    <tr>
-                        <td>{{ producto[1] }}</td>
-                        <td>{{ producto[2] }}</td>
-                    </tr>
-                    {%endfor%}
+                  {% for producto in productos %}
+                  <tr>
+                    <td>{{ producto[1] }}</td>
+                    <td class="right-align">{{ producto[2] }}</td>
+                  </tr>
+                  {% endfor %}
                 </tbody>
             </table>
-            <a class="btn btn-secundary" href="{{ url_for('logout') }}">logout</a>
-            <!-- Terminamos -->
         </body>
     </html>
+
+{% endblock %}

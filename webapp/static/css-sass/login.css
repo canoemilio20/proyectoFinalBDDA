@@ -26,6 +26,7 @@ main{
     max-width: 800px;
     margin: auto;
     position: relative;
+    transform: translateY(100px);
 }
 
 .caja__trasera{

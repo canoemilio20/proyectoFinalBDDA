@@ -1,21 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Modificar Usuario</title>
+    <title>Modificar/Borrar Usuario</title>
 </head>
 <body>
-    <h1>Modificar Usuario</h1>
+    <h1>Modificar/Borrar Usuario</h1>
+
+    <h2>Información del Usuario</h2>
+    <p>Nombre: {{ usuario.nombre }}</p>
+    <p>Apellido Paterno: {{ usuario.apellidoPaterno }}</p>
+    <p>Apellido Materno: {{ usuario.apellidoMaterno }}</p>
+    <p>Correo: {{ usuario.nombreUsuario }}</p>
+    <p>Tipo de Empleado: {{ login.nombreTipo }}</p>
     
-    <form method="POST" action="{{ url_for('modificar_usuario', idUsuario=usuario[0]) }}">
-        <label for="usuario">Usuario:</label>
-        <input type="text" id="usuario" name="usuario" value="{{ usuario[1] }}" required>
+
+    <h2>Modificar Usuario</h2>
+    <form method="POST" action="{{ url_for('modificarUsuarios', idUsuario=usuario.idUsuario) }}">
+        <label for="nombre">Nombre:</label>
+        <input type="text" id="nombre" name="nombre" value="{{ usuario.nombre }}" required>
+
+        <label for="apellidoPaterno">Apellido Paterno:</label>
+        <input type="text" id="apellidoPaterno" name="apellidoPaterno" value="{{ usuario.apellidoPaterno }}" required>
+
+        <label for="apellidoMaterno">Apellido Materno:</label>
+        <input type="text" id="apellidoMaterno" name="apellidoMaterno" value="{{ usuario.apellidoMaterno }}" required>
         
-        <label for="idTipo">ID Tipo:</label>
-        <input type="text" id="idTipo" name="idTipo" value="{{ usuario[2] }}" required>
+        <label for="nomrbeUsuario">Correo:</label>
+        <input type="text" id="nombreUsuario" name="nombreUsuario" value="{{ usuario.nombreUsuario }}" required>
         
+        <label for="idTipo">Tipo de Empleado:</label>
+        <select id="nombreTipo" name="nombreTipo">
+            <option value="admin" {% if usuario.idTipo == 'admin' %}selected{% endif %}>Administrador</option>
+            <option value="cliente" {% if usuario.idTipo == 'cliente' %}selected{% endif %}>Cliente</option>
+            <option value="compania" {% if usuario.idTipo == 'compania' %}selected{% endif %}>Compañía</option>
+        </select>
+
         <button type="submit">Guardar</button>
     </form>
-    
-    <a href="{{ url_for('usuarios') }}">Cancelar</a>
+
+    <h2>Borrar Usuario</h2>
+    <form method="POST" action="{{ url_for('borrarUsuario', idUsuario=usuario.id) }}">
+        <button type="submit">Borrar</button>
+    </form>
+
+    <a href="{{ url_for('usuarios') }}">Volver a Usuarios</a>
 </body>
 </html>
