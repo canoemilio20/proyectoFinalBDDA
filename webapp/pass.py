@@ -8,4 +8,4 @@ hash = generate_password_hash(password)
 print(hash)
 
 if check_password_hash(hash, password):
-    print("A huevo")
+    print("Igualito papa")

@@ -1,41 +1,59 @@
+{% extends 'layoutAdministrador.html' %}
+
+{% block body %}
+
+<!--CONTENIDO PRINCIPAL DE LA PAGINA-->
+
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UFT-8">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/estilo.css')}}">
     <title>Usuarios</title>
+    <style>
+        table.center {
+            margin: auto;
+            font-size: 25px;
+            border-collapse: separate;
+            border-spacing: 20px;
+        }
+    </style>
 </head>
-<body>
+<body> 
     <h1>Lista de Usuarios</h1>
     
-    {% if usuarios %}
-        <table>
-            <tr>
-                <th>ID Usuario</th>
-                <th>Nombre</th>
-                <th>Apellido Paterno</th>
-                <th>Apellido Materno</th>
-                <th>Correo</th>
-                <th>ID Tipo</th>
-                <th>Acciones</th>
-            </tr>
-            {% for usuario in usuarios %}
-            <tr>
-                <td>{{ usuario.idUsuario }}</td>
-                <td>{{ usuario.nombre }}</td>
-                <td>{{ usuario.apellidoPaterno }}</td>
-                <td>{{ usuario.apellidoMaterno }}</td>
-                <td>{{ usuario.nomrbeUsuario }}</td>
-                <td>{{ usuario.idTipo }}</td>
-                <td>
-                    <a href="{{ url_for('modificarUsuarios', idUsuario=usuario.idUsuario) }}">Modificar</a>
-                    <a href="{{ url_for('modificarUsuarios', idUsuario=usuario.idUsuario) }}">Eliminar</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
-    {% else %}
-        <p>No hay usuarios registrados.</p>
-    {% endif %}
-    
-    <a href="{{ url_for('inicio') }}">Volver</a>
+    <div style="max-height: 500px; width: 100%; overflow-y: scroll; text-align: center;">
+        {% if usuarios %}
+            <table style="margin: 0 auto">
+                <tr>
+                    <th style="position: sticky; top: 0; background-color: white;">ID</th>
+                    <th style="position: sticky; top: 0; background-color: white;">Nombre</th>
+                    <th style="position: sticky; top: 0; background-color: white;">Apellido Paterno</th>
+                    <th style="position: sticky; top: 0; background-color: white;">Apellido Materno</th>
+                    <th style="position: sticky; top: 0; background-color: white;">Usuario</th>
+                    <th style="position: sticky; top: 0; background-color: white;">ID Tipo</th>
+                    <th style="position: sticky; top: 0; background-color: white;">Acciones</th>
+                </tr>
+                {% for usuario in usuarios %}
+                <tr>
+                    <td>{{ usuario[0] }}</td>
+                    <td>{{ usuario[3] }}</td>
+                    <td>{{ usuario[4] }}</td>
+                    <td>{{ usuario[5] }}</td>
+                    <td>{{ usuario[1] }}</td>
+                    <td>{{ usuario[6] }}</td>
+                    <td>
+                        <a href="{{ url_for('eliminarUsuario', idUsuario=usuario[0]) }}">Eliminar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No hay usuarios registrados.</p>
+        {% endif %}
+    </div>
 </body>
 </html>
+
+{% endblock %}

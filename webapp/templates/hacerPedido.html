@@ -1,0 +1,46 @@
+{% extends 'layoutTienda.html' %}
+
+{% block body %}
+
+<!--CONTENIDO PRINCIPAL DE LA PAGINA-->
+
+<!doctype html>
+    <html>
+        <head>
+            <!-- Etiquetas meta y uso de Jinja -->
+            <meta charset="UFT-8">
+            <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+            <link rel="stylesheet" href="{{url_for('static', filename='css/estilo.css')}}">
+            <title> Agregar usuarios </title>
+        </head>
+        <body>
+            <!-- Iniciamos -->
+            <h2>Hacer Pedido</h2>
+            <br>
+            <form method="POST" action="/hacerPedido">
+                <label for="tienda">Tienda:</label>
+                <select id="tienda" name="tienda">
+                    <option value="" selected disabled>Seleccionar</option>
+                  {% for tienda in tiendas %}
+                    <option value="{{ tienda[0] }}">{{ tienda[1] }}</option>
+                  {% endfor %}
+                </select>
+                <br>
+                <label for="producto">Producto:</label>
+                <select id="producto" name="producto">
+                    <option value="" selected disabled>Seleccionar</option>
+                  {% for producto in productos %}
+                    <option value="{{ producto[0] }}">{{ producto[1] }}</option>
+                  {% endfor %}
+                </select>
+                <br>
+                <label for="cantidad">Cantidad:</label>
+                <input type="text" name="cantidad" required>
+                <br>
+                <input type="submit" value="Enviar Pedido">
+              </form>
+            <!-- Terminamos -->
+        </body>
+    </html>
+
+{% endblock %}

@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, session, redirect, url_for
 from flask_mysqldb import MySQL
-from mysql import connector
 from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
@@ -24,7 +23,7 @@ def index():
         elif idTipo == 2:
             return render_template('inventario.html', nombreUsuario=nombreUsuario)
         elif idTipo == 3:
-            return render_template('index.html', nombreUsuario=nombreUsuario)
+            return render_template('pedidos.html', nombreUsuario=nombreUsuario)
         else:
             error = 'Tipo de usuario no válido.'
             return render_template('login.html', error=error)
@@ -39,17 +38,10 @@ def login():
         contrasenaUsuario = request.form['contrasenaUsuario']
 
         # Verificar las credenciales en la base de datos
-        conn = connector.connect(
-            host='localhost',
-            user='usuario',
-            password='111',
-            database='elatico'
-        )
-        cursor = conn.cursor()
+        cursor = mysql.connection.cursor()
         cursor.execute("SELECT * FROM usuario WHERE nombreUsuario = %s AND contrasenaUsuario = %s", (nombreUsuario, contrasenaUsuario))
         user = cursor.fetchone()
         cursor.close()
-        conn.close()
 
         if user:
             session['nombreUsuario'] = user[1]  # Utilizamos el índice 1 para acceder al nombre de usuario en la tupla
@@ -62,7 +54,7 @@ def login():
             elif idTipo == 2:
                 return redirect('/inventarioAlmacen')
             elif idTipo == 3:
-                return redirect('/index')
+                return redirect('/pedidos')
             else:
                 error = 'Tipo de usuario no válido.'
                 return render_template('login.html', error=error)
@@ -74,14 +66,7 @@ def login():
         # Si es una solicitud GET, mostrar el formulario de inicio de sesión
         return render_template('login.html')
 
-@app.route('/logout')
-def logout():
-    # Cerrar la sesión del usuario y redirigirlo al formulario de inicio de sesión
-    session.pop('nombreUsuario', None)
-    session.pop('idTipo', None)
-    return redirect('/login')
-
-@app.route('/registro', methods=['GET', 'POST'])
+@app.route('/registro', methods=['POST'])
 def registro():
     if request.method == 'POST':
         nombre = request.form['nombre']
@@ -90,67 +75,73 @@ def registro():
         nombreUsuario = request.form['nombreUsuario']
         contrasenaUsuario = request.form['contrasenaUsuario']
         idTipo = request.form['idTipo']
-        
-        conn = mysql.connector.connect(host='localhost', user='usuario', password='contraseña', database='basededatos')
-        cursor = conn.cursor()
+        cursor = mysql.connection.cursor()
         cursor.execute('''INSERT INTO usuario(nombre, apellidoPaterno, apellidoMaterno, nombreUsuario, contrasenaUsuario, idTipo) VALUES(%s, %s, %s, %s, %s, %s)''', (nombre, apellidoPaterno, apellidoMaterno, nombreUsuario, contrasenaUsuario, idTipo))
+        cursor.close()
+        return login()
+
+@app.route('/logout')
+def logout():
+    # Cerrar la sesión del usuario y redirigirlo al formulario de inicio de sesión
+    session.pop('nombreUsuario', None)
+    session.pop('idTipo', None)
+    return redirect('/login')
 
 ################## ADMIN ########################################
 @app.route('/admin')
-def admin():
+def administrador():
     if 'idTipo' in session and session['idTipo'] == 1:
         cursor = mysql.connection.cursor()
-        cursor.execute("SELECT idUsuario, nombreUsuario, nombre, apellidoPaterno, apellidoMaterno, idTipo FROM usuario")
+        cursor.execute("SELECT idUsuario, nombreUsuario, contrasenaUsuario, nombre, apellidoPaterno, apellidoMaterno, idTipo FROM usuario WHERE idTipo <> 1")
         usuarios = cursor.fetchall()
         cursor.close()
-
         return render_template('admin.html', usuarios=usuarios)
+    else:
+        return 'Acceso no autorizado'
 
-@app.route('/usuarios/<int:idUsuario>/modificar', methods=['GET', 'POST'])
-def modificar_usuario(idUsuario):
+@app.route('/agregarUsuario', methods=['GET', 'POST'])
+def agregarUsuario():
     if 'idTipo' in session and session['idTipo'] == 1:
+        if request.method == 'GET':
+            return render_template('agregarUsuarios.html')
         if request.method == 'POST':
-            # Obtener los datos modificados del formulario
+            nombreUsuario = request.form['nombreUsuario']
+            contrasenaUsuario = request.form['contrasenaUsuario']
             nombre = request.form['nombre']
             apellidoPaterno = request.form['apellidoPaterno']
             apellidoMaterno = request.form['apellidoMaterno']
             idTipo = request.form['idTipo']
-            
             cursor = mysql.connection.cursor()
-            cursor.execute("UPDATE usuarios SET nombre = %s, apellidoPaterno = %s, apellidoMaterno = %s, idTipo = %s WHERE idUsuario = %s",(nombre, apellidoPaterno, apellidoMaterno, idTipo, idUsuario))
+            cursor.execute("INSERT INTO usuario(nombreUsuario, contrasenaUsuario, nombre, apellidoPaterno, apellidoMaterno, idTipo) VALUES(%s,%s,%s,%s,%s,%s)", (nombreUsuario, contrasenaUsuario, nombre, apellidoPaterno, apellidoMaterno, idTipo))
+            cursor.connection.commit()
+            cursor.close()
+            return administrador()
+    else:
+        return 'Acceso no autorizado'
+
+@app.route('/eliminarUsuario/<int:idUsuario>', methods=['GET'])
+def eliminarUsuario(idUsuario):
+    if 'idTipo' in session and session['idTipo'] == 1:
+        if request.method == 'GET':
+            cursor = mysql.connection.cursor()
+            cursor.execute("DELETE FROM usuario WHERE idUsuario = %s", (idUsuario,))
             mysql.connection.commit()
             cursor.close()
+            return administrador()
+    else:
+        return 'Acceso no autorizado'
 
-            return redirect(url_for('usuarios'))
-        else:
-            cursor = mysql.connection.cursor()
-            cursor.execute("SELECT * FROM usuario WHERE idUsuario = %s", (idUsuario,))
-            usuario = cursor.fetchone()
-            cursor.close()
-
-            return render_template('modificarUsuarios.html', usuario=usuario)
-        
-@app.route('/usuarios/<int:idUsuario>/borrar', methods=['POST'])
-def borrar_usuario(idUsuario):
-    
-    cursor = mysql.connection.cursor()
-    cursor.execute("DELETE FROM usuario WHERE idUsuario = %s", (idUsuario,))
-    mysql.connection.commit()
-    cursor.close()
-
-    return redirect(url_for('usuarios'))
-        
 
 ################## ALMACEN (nosotros) ##########################################
 # Pagina principal del almacen
-@app.route('/inventarioAlmacen', methods=['GET'])
+@app.route('/inventarioAlmacen')
 def inicio():
     if 'idTipo' in session and session['idTipo'] == 2:
-        if request.method == 'GET':
-            cursor = mysql.connection.cursor()
-            cursor.execute('''SELECT * FROM productos''') # corregir consulta
-            productos = cursor.fetchall()
-            return render_template('inventario.html', productos=productos)
+        cursor = mysql.connection.cursor()
+        cursor.execute('''SELECT p.nombreProducto, c.cantidadProducto FROM producto p JOIN contiene c ON p.idProducto = c.idProducto ''')
+        productos = cursor.fetchall()
+        cursor.close()
+        return render_template('inventario.html', productos=productos)
     else:
         return 'Acceso no autorizado'
 
@@ -161,31 +152,34 @@ def insertar():
         if request.method == 'GET':
             return render_template('agregarProductos.html')
         if request.method == 'POST':
-            nombre = request.form['nombre']
-            cantidad = request.form['cantidad']
+            nombre = request.form['nombreProducto']
+            cantidad = request.form['cantidadProducto']
             cursor = mysql.connection.cursor()
-            cursor.execute('''INSERT INTO productos(nombre, cantidad) VALUES(%s, %s)''', (nombre, cantidad))
+            cursor.execute('''INSERT INTO producto(nombreProducto) VALUES (%s)''', (nombre,))
+            cursor.execute('''INSERT INTO contiene(idProducto, cantidadProducto) SELECT idProducto, %s FROM producto WHERE nombreProducto = %s''', (cantidad, nombre,))
             cursor.connection.commit()
             cursor.close()
             return inicio()
     else:
         return 'Acceso no autorizado'
     
-# Metodo para modificar productos. Funciona pero no muestra los valores actuales antes de que se modifiquen
+# Metodo para modificar productos
 @app.route('/modificarProducto', methods=['GET','POST'])
 def modificar():
     if 'idTipo' in session and session['idTipo'] == 2:
         if request.method == 'GET':
             cursor = mysql.connection.cursor()
-            cursor.execute('''SELECT * FROM productos''')
+            cursor.execute('''SELECT * FROM producto''')
             productos = cursor.fetchall()
+            cursor.close()
             return render_template('modificarProductos.html', productos=productos)
         if request.method == 'POST':
             idProducto = request.form['producto']
             nombre = request.form['nombre']
             cantidad = request.form['cantidad']
             cursor = mysql.connection.cursor()
-            cursor.execute('''UPDATE productos SET nombre=%s, cantidad=%s WHERE idProducto=%s''', (nombre, cantidad, idProducto))
+            cursor.execute('''UPDATE producto SET nombreProducto=%s WHERE idProducto=%s''', (nombre, idProducto))
+            cursor.execute('''UPDATE contiene SET cantidadProducto=%s WHERE idProducto=%s''', (cantidad, idProducto,))
             cursor.connection.commit()
             cursor.close()
             return inicio()
@@ -198,13 +192,14 @@ def eliminar():
     if 'idTipo' in session and session['idTipo'] == 2:
         if request.method == 'GET':
             cursor = mysql.connection.cursor()
-            cursor.execute('''SELECT * FROM productos''')
+            cursor.execute('''SELECT * FROM producto''')
             productos = cursor.fetchall()
+            cursor.close()
             return render_template('eliminarProductos.html', productos=productos)
         if request.method == 'POST':
             idProducto = request.form['producto']
             cursor = mysql.connection.cursor()
-            cursor.execute('''DELETE FROM productos WHERE idProducto=%s''', (idProducto,))
+            cursor.execute('''DELETE FROM producto WHERE idProducto=%s''', (idProducto,))
             cursor.connection.commit()
             cursor.close()
             return inicio()
@@ -212,59 +207,90 @@ def eliminar():
         return 'Acceso no autorizado'
     
 # Metodo para consultar ruta y rastreo de paquete
-@app.route('/rutaAlmacen', methods=['GET','POST'])
-def ruta():
+@app.route('/rutaAlmacen')
+def rutaAlmacen():
     if 'idTipo' in session and session['idTipo'] == 2:
-        if request.method == 'GET': # consultar posicion
-            cursor = mysql.connection.cursor()
-            cursor.execute('''SELECT * FROM productos''')
-            return render_template('ruta.html')
-        if request.method == 'POST': # mostrar ruta con posicion de consulta
-            return
+        return render_template('rutaAlmacen.html')
     else:
         return 'Acceso no autorizado'
         
 @app.route('/rastreoAlmacen', methods=['GET'])
-def rastreo():
+def rastreoAlmacen():
     if 'idTipo' in session and session['idTipo'] == 2:
-        if request.method == 'GET': # consultar posicion
-            cursor = mysql.connection.cursor()
-            cursor.execute('''SELECT * FROM productos''')
-            return render_template('rastreo.html')
-        if request.method == 'POST': # mostrar rastreo con posicion de consulta
-            return
+        return render_template('rastreoAlmacen.html')
     else:
         return 'Acceso no autorizado'
-          
+
 ########################################################################################
 
 ################## TIENDA ##########################################
-"""
-# Pagina principal de la tienda
-@app.route('/inventarioTienda', methods=['GET','POST'])
-def inicio():
+@app.route('/pedidos')
+def pedidos():
     if 'idTipo' in session and session['idTipo'] == 3:
         cursor = mysql.connection.cursor()
-        cursor.execute('''SELECT * FROM productos''') # corregir consulta
-        productos = cursor.fetchall()
-        return render_template('inventario.html', productos=productos)
-    else :
+        cursor.execute('''SELECT p.idPedido, t.nombreTienda, pr.nombreProducto, p.cantidadPedido, p.fechaPedido, p.fechaEntrega, p.status FROM pedido p JOIN tienda t ON p.idTienda = t.idTienda JOIN producto pr ON p.idProducto = pr.idProducto''')
+        pedidos = cursor.fetchall()
+        cursor.close()
+        return render_template('pedidos.html', pedidos=pedidos)
+    else:
         return 'Acceso no autorizado'
-
-# Metodo para consultar ruta y rastreo de paquete
-@app.route('/rutaTienda', methods=['GET','POST'])
-def ruta():
+    
+@app.route('/cambiarStatus/<int:idPedido>', methods=['GET'])
+def status(idPedido):
     if 'idTipo' in session and session['idTipo'] == 3:
         if request.method == 'GET':
             cursor = mysql.connection.cursor()
-            cursor.execute('''SELECT * FROM productos''')
-            return render_template('ruta.html')
+            cursor.execute("UPDATE pedido SET fechaEntrega=CURDATE() WHERE idPedido = %s", (idPedido,))
+            cursor.execute("UPDATE pedido SET status='Entregado' WHERE idPedido = %s", (idPedido,))
+            mysql.connection.commit()
+            cursor.close()
+            return pedidos()
+    else:
+        return 'Acceso no autorizado'
+
+@app.route('/hacerPedido', methods=['GET','POST'])
+def pedido():
+    if 'idTipo' in session and session['idTipo'] == 3:
+        if request.method == 'GET':
+            cursor = mysql.connection.cursor()
+            cursor.execute('''SELECT * FROM tienda''')
+            tiendas = cursor.fetchall()
+            cursor.execute('''SELECT * FROM producto''')
+            productos = cursor.fetchall()
+            cursor.close()
+            return render_template('hacerPedido.html', tiendas=tiendas, productos=productos)
         if request.method == 'POST':
-            return 
-    else :
-        return 'Acceso no autoriza"""
+            tienda = request.form['tienda']
+            producto = request.form['producto']
+            cantidad = request.form['cantidad']
+            cursor = mysql.connection.cursor()
+            cursor.execute('''SELECT a.idAlmacen FROM accede AS a INNER JOIN tienda AS t ON a.idTienda = t.idTienda WHERE t.nombreTienda = %s''', (tienda))
+            idAlmacen = cursor.fetchone()
+            cursor.execute('''SELECT idTienda FROM tienda WHERE nombreTienda = %s''', (tienda))
+            idTienda = cursor.fetchone()
+            cursor.execute('''SELECT idProducto FROM producto WHERE nombreProducto = %s''', (producto))
+            idProducto = cursor.fetchone()
+            cursor.execute('''INSERT INTO pedido(idAlmacen, idTienda, idProducto, cantidadPedido, fechaPedido) VALUES (%s,%s,%s,%s,CURDATE())''', (idAlmacen, idTienda, idProducto, cantidad))
+            cursor.connection.commit()
+            cursor.close()
+            return pedidos()
+    else:
+        return 'Acceso no autorizado'
+
+@app.route('/rutaTienda')
+def rutaTienda():
+    if 'idTipo' in session and session['idTipo'] == 3:
+        return render_template('rutaTienda.html')
+    else:
+        return 'Acceso no autorizado'
         
-########################################################################################
+@app.route('/rastreoTienda', methods=['GET'])
+def rastreoTienda():
+    if 'idTipo' in session and session['idTipo'] == 3:
+        return render_template('rastreoTienda.html')
+    else:
+        return 'Acceso no autorizado'
+####################################################3####################################
     
 if __name__ == "__main__":
     app.run(debug=True)

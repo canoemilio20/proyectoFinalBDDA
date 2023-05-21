@@ -1,0 +1,47 @@
+{% extends 'layoutAdministrador.html' %}
+
+{% block body %}
+
+<!--CONTENIDO PRINCIPAL DE LA PAGINA-->
+
+<!doctype html>
+    <html>
+        <head>
+            <!-- Etiquetas meta y uso de Jinja -->
+            <meta charset="UFT-8">
+            <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+            <link rel="stylesheet" href="{{url_for('static', filename='css/estilo.css')}}">
+            <title> Agregar usuarios </title>
+        </head>
+        <body>
+            <!-- Iniciamos -->
+            <h2>Agregar usuario</h2>
+            <br>
+            <form method="POST" action="/agregarUsuario">
+                <p>
+                    Nombre Usuario:
+                    <input type="text" name="nombreUsuario"/>
+                    <br>
+                    Contrase&ntilde;a Usuario: 
+                    <input type="text" name="contrasenaUsuario"/>
+                    <br>
+                    Nombre: 
+                    <input type="text" name="nombre"/>
+                    <br>
+                    Apellido Paterno: 
+                    <input type="text" name="apellidoPaterno"/>
+                    <br>
+                    Apellido Materno: 
+                    <input type="text" name="apellidoMaterno"/>
+                    <br>
+                    Tipo Usuario:
+                    <input type="text" name="idTipo"/>
+                    <br>
+                    <input type="submit" value="Agregar"/>
+                </p>
+            </form>
+            <!-- Terminamos -->
+        </body>
+    </html>
+
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'layoutTienda.html' %}
+
+{% block body %}
+
+<!--CONTENIDO PRINCIPAL DE LA PAGINA-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UFT-8">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/estilo.css')}}">
+    <title>Usuarios</title>
+    <style>
+        table.center {
+            margin: auto;
+            font-size: 25px;
+            border-collapse: separate;
+            border-spacing: 20px;
+        }
+    </style>
+</head>
+<body> 
+    <h1>Lista de Pedidos</h1>
+    
+    <div style="max-height: 500px; width: 100%; overflow-y: scroll; text-align: center;">
+        {% if pedidos %}
+            <table style="margin: 0 auto">
+                <tr>
+                    <th style="position: sticky; top: 0; background-color: white;">ID</th>
+                    <th style="position: sticky; top: 0; background-color: white;">Tienda</th>
+                    <th style="position: sticky; top: 0; background-color: white;">Producto</th>
+                    <th style="position: sticky; top: 0; background-color: white;">Cantidad</th>
+                    <th style="position: sticky; top: 0; background-color: white;">Fecha de Solicitud</th>
+                    <th style="position: sticky; top: 0; background-color: white;">Fecha de Entrega</th>
+                    <th style="position: sticky; top: 0; background-color: white;">Status</th>
+                </tr>
+                {% for pedido in pedidos %}
+                <tr>
+                    <td>{{ pedido[0] }}</td>
+                    <td>{{ pedido[1] }}</td>
+                    <td>{{ pedido[2] }}</td>
+                    <td>{{ pedido[3] }}</td>
+                    <td>{{ pedido[4] }}</td>
+                    <td>{{ pedido[5] }}</td>
+                    <td>{{ pedido[6] }}</td>
+                    {% if pedido[6]=='Entregado' %}
+                        <td></td>
+                    {% else %}
+                        <td>
+                            <a href="{{ url_for('status', idPedido=pedido[0]) }}">Confirmar Entrega</a>
+                        </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No hay registro de pedidos</p>
+        {% endif %}
+    </div>
+</body>
+</html>
+
+{% endblock %}

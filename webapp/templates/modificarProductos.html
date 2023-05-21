@@ -19,16 +19,17 @@
             <form method="POST" action="/modificarProducto">
                 <label for="producto">Selecciona el producto a modificar: </label>
                 <select id="producto" name="producto">
+                    <option value="" selected disabled>Seleccionar</option>
                     {% for producto in productos %}
-                        <option value="{{ producto[0] }}"> {{ producto[1] }} </option> 
+                        <option value="{{ producto[0] }}"> {{ producto[1] }} </option>
                     {% endfor %}
                 </select>
                 <br>
                 <label for="nombre">Nombre:</label>
-                <input type="text" name="nombre" value="{% if producto is defined %} {{ producto[1] }} {% endif %}">
+                <input type="text" name="nombre">
                 <br>
                 <label for="cantidad">Cantidad:</label>
-                <input type="text" name="cantidad" value="{% if producto is defined %} {{ producto[2] }} {% endif %}">
+                <input type="text" name="cantidad">
                 <input type="submit" value="Modificar">
             </form>
         </body>

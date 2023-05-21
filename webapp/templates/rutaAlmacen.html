@@ -1,0 +1,115 @@
+{% extends 'layoutAlmacen.html' %}
+
+{% block body %}
+
+<!--CONTENIDO PRINCIPAL DE LA PAGINA-->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UFT-8">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <title>Trazar ruta</title>
+    <style>
+      #map {
+        height: 670px;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <h4>Ruta &Oacute;ptima</h4>
+    <nav>
+      <a href="/rastreoAlmacen">Rastrear Pedido</a>
+    </nav>
+    <div id="map"></div>
+    <script>
+      let estoa = { lat: 25.66372048660872, lng: -100.42183451724908 }
+      let tamarindoValle = { lat: 25.641477412586866, lng: -100.31753528110846 }
+      let costcoLasTorres = { lat: 25.655315473365977, lng: -100.36436241724931 }
+      function initMap() {
+      var directionServices = new google.maps.DirectionsService();
+      var directionRenderer = new google.maps.DirectionsRenderer({
+        suppressMarkers: true
+      });
+      var map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 12,
+        center: { lat: 25.68707, lng: -100.31856 },
+        styles: [{
+          featureType: 'poi',
+          stylers: [{ visibility: 'off' }]
+        }, {
+          featureType: 'transit.station',
+          stylers: [{ visibility: 'off' }]
+        }],
+        disableDoubleClickZoom: true,
+        disableDefaultUI: true
+      });
+      var marker = new google.maps.Marker({
+        position: estoa,
+        map: map,
+      });
+      var marker = new google.maps.Marker({
+        position: tamarindoValle,
+        map: map,
+      });
+      var marker = new google.maps.Marker({
+        position: costcoLasTorres,
+        map: map,
+      });
+      directionRenderer.setMap(map);
+
+      function drawRoute() {
+        var request = {
+          origin: { location: estoa },
+          destination: { location: estoa },
+          travelMode: 'DRIVING',
+          drivingOptions: {
+            departureTime: new Date(Date.now()),
+          },
+          waypoints: [
+            {
+              location: tamarindoValle,
+              stopover: false,
+            }, {
+              location: costcoLasTorres,
+              stopover: false,
+            }],
+          optimizeWaypoints: true
+        };
+
+        directionServices.route(request, function (result, status) {
+          if (status == 'OK') {
+            var distance = result.routes[0].legs[0].distance.value;
+            var duration = result.routes[0].legs[0].duration_in_traffic.value;
+            for (let i=1; i<result.routes[0].legs.length; i++) {
+              distance += result.routes[0].legs[i].distance.value
+              duration += result.routes[0].legs[i].duration_in_traffic.value
+            }
+            for (var i = 0; i < result.routes[0].legs.length; i++) {
+              var leg = result.routes[0].legs[i];
+              for (var j = 0; j < leg.steps.length; j++) {
+                var step = leg.steps[j];
+                var path = step.path;
+                for (var k = 0; k < path.length; k++) {
+                  var lat = path[k].lat().toFixed(6);
+                  var lng = path[k].lng().toFixed(6);
+                }
+              }
+            }
+            directionRenderer.setDirections(result);
+            console.log("Distance: " + (distance/1000).toFixed(1) + " km");
+            console.log("Duration: " + (duration/60).toFixed() + " minutes");
+          }
+        })
+      }
+      drawRoute();
+    }
+    </script>
+    <script async
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC6I6exn0jYDzoimzt4vN7nSqp5yKthLrE&callback=initMap">
+    </script>
+  </body>
+</html>
+
+{% endblock %}

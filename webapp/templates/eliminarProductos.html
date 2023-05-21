@@ -18,6 +18,7 @@
             <form method="POST" action="/eliminarProducto">
                 <label for="producto">Selecciona el producto a eliminar: </label>
                 <select id="producto" name="producto">
+                    <option value="" selected disabled>Seleccionar</option>
                     {% for producto in productos %}
                         <option value="{{ producto[0] }}"> {{ producto[1] }} </option> 
                     {% endfor %}

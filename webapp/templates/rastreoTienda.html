@@ -1,4 +1,4 @@
-{% extends 'layoutAlmacen.html' %}
+{% extends 'layoutTienda.html' %}
 
 {% block body %}
 
@@ -9,7 +9,7 @@
   <head>
     <meta charset="UFT-8">
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
-    <title>Trazar ruta</title>
+    <title>Rastrear orden</title>
     <style>
       #map {
         height: 670px;
@@ -18,15 +18,17 @@
     </style>
   </head>
   <body>
-    <h4>Ruta &Oacute;ptima</h4>
+    <h4>Rastreo de Pedido</h4>
     <nav>
-      <a href="/rastreoAlmacen">Rastrear Pedido</a>
+      <a href="/rutaTienda">Consultar Ruta</a>
     </nav>
     <div id="map"></div>
     <script>
       let estoa = { lat: 25.66372048660872, lng: -100.42183451724908 }
-      let tamarindoValle = { lat: 25.641477412586866, lng: -100.31753528110846 }
-      let costcoLasTorres = { lat: 25.655315473365977, lng: -100.36436241724931 }
+      let tamarindoValle = { lat: 25.65529613109825, lng: -100.36440533259247 }
+      let costcoLasTorres = { lat: 25.641778143498907, lng: -100.31745500834894 }
+      var positions = [];
+
       function initMap() {
       var directionServices = new google.maps.DirectionsService();
       var directionRenderer = new google.maps.DirectionsRenderer({
@@ -51,6 +53,10 @@
       });
       var marker = new google.maps.Marker({
         position: tamarindoValle,
+        map: map,
+      });
+      var marker = new google.maps.Marker({
+        position: costcoLasTorres,
         map: map,
       });
       var marker = new google.maps.Marker({
@@ -91,19 +97,65 @@
               for (var j = 0; j < leg.steps.length; j++) {
                 var step = leg.steps[j];
                 var path = step.path;
-                console.log('Path of step ' + (j + 1) + ' in leg ' + (i + 1) + ':');
                 for (var k = 0; k < path.length; k++) {
-                  var lat = path[k].lat().toFixed(6);
-                  var lng = path[k].lng().toFixed(6);
-                  console.log(lat + ', ' + lng + '|');
+                    positions.push(path[k]);
                 }
               }
             }
             directionRenderer.setDirections(result);
             console.log("Distance: " + (distance/1000).toFixed(1) + " km");
             console.log("Duration: " + (duration/60).toFixed() + " minutes");
+            animateMarker();
           }
-        })
+        });
+        
+        function animateMarker() {
+            var index = 0;
+            var step = 0; // meters
+            var tick = 1000; // milliseconds
+            var distance = 0;
+            var lastFrameTime = null;
+
+            function frame(time) {
+                if (!lastFrameTime) {
+                lastFrameTime = time;
+                }
+
+                var elapsed = time - lastFrameTime;
+
+                if (elapsed >= tick) {
+                lastFrameTime = time;
+
+                if (index >= positions.length - 1) {
+                    return;
+                }
+
+                var latLng1 = positions[index];
+                var latLng2 = positions[index + 1];
+
+                distance += google.maps.geometry.spherical.computeDistanceBetween(latLng1, latLng2);
+
+                if (distance >= step) {
+                    var heading = google.maps.geometry.spherical.computeHeading(latLng1, latLng2);
+
+                    marker.setPosition(latLng2);
+                    marker.setIcon({
+                        url: 'https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png',
+                        size: new google.maps.Size(20, 32),
+                        origin: new google.maps.Point(0, 0),
+                        anchor: new google.maps.Point(0, 32),
+                        rotation: heading
+                    });
+
+                    distance = 0;
+                    index++;
+                }
+                }
+                requestAnimationFrame(frame);
+            }
+
+            requestAnimationFrame(frame);
+            }
       }
       drawRoute();
     }

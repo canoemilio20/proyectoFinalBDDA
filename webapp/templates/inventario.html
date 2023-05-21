@@ -15,35 +15,34 @@
             <style>
                 table.center {
                     margin: auto;
-                    font-size: 40px;
-                    border-spacing: 100px;
-                }
-
-                th, td {
-                    padding: 20px;
+                    font-size: 25px;
+                    border-collapse: separate;
+                    border-spacing: 20px;
                 }
             </style>
         </head>
         <body>
-            <h1 id="h"> Bienvenido, Usuario
+            <h1 id="h"> Bienvenido, {{ nombreUsuario }} </h1>
             <h1>Consulta de inventario</h1>
             <br>
-            <table class="center">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Cantidad</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for producto in productos %}
-                  <tr>
-                    <td>{{ producto[1] }}</td>
-                    <td class="right-align">{{ producto[2] }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-            </table>
+            <div style="max-height: 500px; width: 100%; overflow-y: scroll; margin: 0 auto; text-align: center;">
+              <table class="center">
+                  <thead>
+                    <tr>
+                      <th style="position: sticky; top: 0; background-color: white;">Producto</th>
+                      <th style="position: sticky; top: 0; background-color: white;">Cantidad</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for producto in productos %}
+                    <tr>
+                      <td>{{ producto[0] }}</td>
+                      <td>{{ producto[1] }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+              </table>
+            </div>
         </body>
     </html>
 
